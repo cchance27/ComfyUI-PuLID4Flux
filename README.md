@@ -7,6 +7,8 @@ It's only tested with GGUF on my Macbook M3, if it works/doesn't work on other c
 This is not the way to do this properly, Cubiq is working on a real verson, and I believe 
 the comfy team are working on hooks to improve the way we can integrate into the pipeline for new forward methods hopefully. 
 
+![Example Workflow with GGUF and PuLID](example.png)
+
 ### Information
 
 This is a mess, please don't use this code it's not really ready to be used publicly but people asked me for a look at it so here it is.
