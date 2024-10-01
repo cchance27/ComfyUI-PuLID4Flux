@@ -66,16 +66,14 @@ class PULIDFluxPatcher:
         pulid.load_checkpoint()
         
         print(colored(255, 0, 0, 'PuLID Patcher') + ' Cloning Model into Patcher')
-        patcher = PULIDModelPatcher.clone(model, pulid=pulid)
-        print(colored(255, 0, 0, 'PuLID Patcher') + ' Done Cloning')
+        PULIDModelPatcher.patch_model(model, pulid)
         
+        print(colored(255, 0, 0, 'PuLID Patcher') + ' Running Detection')
         face_feature_tensor, ante_embed = facedetection.get_face_and_ante_embedding(id_image)
         eva_cond, eva_hidden = evaclip.get_cond_and_hidden(face_feature_tensor)
         pulid.generate_pulid_embedding(ante_embed, eva_cond, eva_hidden)
         
-        patcher.patch_model(pulid)
-        
-        return (patcher, facedetection.debug_img_list) 
+        return (model, facedetection.debug_img_list) 
  
  
 NODE_CLASS_MAPPINGS = {

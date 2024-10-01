@@ -1,24 +1,6 @@
-from comfy.model_patcher import ModelPatcher, copy
- 
-class PULIDModelPatcher(ModelPatcher):
-    def __init__(self, model, load_device, offload_device, size, weight_inplace_update: bool=False, pulid=None):
-        super().__init__(model, load_device, offload_device, size, weight_inplace_update)
-        self.pulid = pulid
-
-    def clone(self, pulid=None):
-        n = PULIDModelPatcher(self.model, self.load_device, self.offload_device, self.size, weight_inplace_update=self.weight_inplace_update, pulid=pulid)
-        n.patches = {}
-        for k in self.patches:
-            n.patches[k] = self.patches[k][:]
-        n.patches_uuid = self.patches_uuid
-        n.object_patches = self.object_patches.copy()
-        n.model_options = copy.deepcopy(self.model_options)
-        n.backup = self.backup
-        n.object_patches_backup = self.object_patches_backup
-        return n
-
-    def patch_model(self, *args, **kwargs):
-        self.model.pulid = self.pulid
+class PULIDModelPatcher():
+    def patch_model(model, pulid, *args, **kwargs):
+        model.pulid = pulid
 
         def new_double_forward(self, img, txt, vec, pe):
             if not hasattr(self, 'original_forward'):
@@ -51,49 +33,50 @@ class PULIDModelPatcher(ModelPatcher):
             return original_img
 
         def new_model_forward(self, *args, **kwargs):
-            self.diffusion_model.ca_idx = 0
-            for i, block in enumerate(self.diffusion_model.double_blocks):
+            self.model.diffusion_model.ca_idx = 0
+            for i, block in enumerate(self.model.diffusion_model.double_blocks):
                 block.pulid_index = i
                 block.pulid = self.pulid
-                block.model = self.diffusion_model
+                block.model = self.model.diffusion_model
                 
-            for i, block in enumerate(self.diffusion_model.single_blocks):
+            for i, block in enumerate(self.model.diffusion_model.single_blocks):
                 block.pulid_index = i
                 block.pulid = self.pulid
-                block.model = self.diffusion_model
+                block.model = self.model.diffusion_model
                 
-            return self.diffusion_model.original_forward(*args, **kwargs)
+            return self.model.diffusion_model.original_forward(*args, **kwargs)
         
-        for i, block in enumerate(self.model.diffusion_model.double_blocks):
+        for i, block in enumerate(model.model.diffusion_model.double_blocks):
             if not hasattr(block, 'original_forward'):
                 block.original_forward = block.forward
             block.forward = new_double_forward.__get__(block)
             
-        for i, block in enumerate(self.model.diffusion_model.single_blocks):
+        for i, block in enumerate(model.model.diffusion_model.single_blocks):
             if not hasattr(block, 'original_forward'):
                 block.original_forward = block.forward
             block.forward = new_single_forward.__get__(block)
             
-        if not hasattr(self.model.diffusion_model, 'original_forward'):
-            self.model.diffusion_model.original_forward = self.model.diffusion_model.forward
+        if not hasattr(model.model.diffusion_model, 'original_forward'):
+            model.model.diffusion_model.original_forward = model.model.diffusion_model.forward
             
-        self.model.diffusion_model.forward = new_model_forward.__get__(self.model)
+        model.model.diffusion_model.forward = new_model_forward.__get__(model)
 
-    def unpatch_model(self, device_to=None, unpatch_weights=True):
-        for block in self.model.diffusion_model.double_blocks:
+    def unpatch_model(model, device_to=None, unpatch_weights=True):
+        for block in model.model.diffusion_model.double_blocks:
             if hasattr(block, 'original_forward'):
                 block.forward = block.original_forward
                 delattr(block, 'original_forward')
                 
-        for block in self.model.diffusion_model.single_blocks:
+        for block in model.model.diffusion_model.single_blocks:
             if hasattr(block, 'original_forward'):
                 block.forward = block.original_forward
                 delattr(block, 'original_forward')
                 
-        if hasattr(self.model, 'original_forward'):
-            self.model.diffusion_model.forward = self.model.diffusion_model.original_forward
-            delattr(self.model, 'original_forward')
+        if hasattr(model.model, 'original_forward'):
+            model.model.diffusion_model.forward = model.model.diffusion_model.original_forward
+            delattr(model.model, 'original_forward')
             
-        if hasattr(self.model, 'pulid'):
-            delattr(self.model, 'pulid')
+        if hasattr(model, 'pulid'):
+            delattr(model, 'pulid')
+ 
  

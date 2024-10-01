@@ -1,3 +1,6 @@
+# Alternatives 
+[ComfyUI-PuLID-Flux](https://github.com/balazik/ComfyUI-PuLID-Flux) Another dev's implementation seems to further ahead with the implementation, still a direct model patch, but integrates better with comfy backend, recommend trying it out instead.
+
 # Comfy PuLID FLUX Experiments
 
 THIS REPO IS JUST AN EXPERIMENT TO TRY TO GET IT WORKING.
